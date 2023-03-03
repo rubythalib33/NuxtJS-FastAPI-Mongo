@@ -1,33 +1,24 @@
 from fastapi import Body, APIRouter, HTTPException
 from passlib.context import CryptContext
 
-from auth.jwt_handler import sign_jwt
-from database.database import add_admin
-from models.admin import Admin, AdminData, AdminSignIn
+
+from database.database import add_admin, retrieve_admins
+from models.admin import Admin, AdminData, Response
 
 router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])
 
 
-@router.post("/login")
-async def admin_login(admin_credentials: AdminSignIn = Body(...)):
-    admin_exists = await Admin.find_one(Admin.email == admin_credentials.username)
-    if admin_exists:
-        password = hash_helper.verify(
-            admin_credentials.password, admin_exists.password)
-        if password:
-            return sign_jwt(admin_credentials.username)
-
-        raise HTTPException(
-            status_code=403,
-            detail="Incorrect email or password"
-        )
-
-    raise HTTPException(
-        status_code=403,
-        detail="Incorrect email or password"
-    )
+@router.get("/", response_description="Admin retrieved", response_model=Response)
+async def get_admin():
+    admins = await retrieve_admins()
+    return {
+        "status_code": 200,
+        "response_type": "success",
+        "description": "Admin data retrieved successfully",
+        "data": admins
+    }
 
 
 @router.post("/new", response_model=AdminData)

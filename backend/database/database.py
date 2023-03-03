@@ -9,6 +9,14 @@ admin_collection = Admin
 student_collection = Student
 
 
+async def retrieve_admins() -> List[Admin]:
+    admins = await admin_collection.all().to_list()
+    #remove password from response
+    for admin in admins:
+        del admin.password
+    return admins
+
+
 async def add_admin(new_admin: Admin) -> Admin:
     admin = await new_admin.create()
     return admin
