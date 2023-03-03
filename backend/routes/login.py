@@ -1,5 +1,6 @@
 from auth.jwt_handler import sign_jwt
-from models.admin import Admin, AdminSignIn
+from models.admin import Admin, AdminSignIn, AdminData
+from database.database import add_admin
 from fastapi import APIRouter, Body, HTTPException
 from passlib.context import CryptContext
 
@@ -35,3 +36,17 @@ async def admin_login(admin_credentials: AdminSignIn = Body(...)):
         status_code=403,
         detail="Incorrect email or password"
     )
+
+
+@router.post("/signup", response_model=AdminData)
+async def admin_signup(admin: Admin = Body(...)):
+    admin_exists = await Admin.find_one(Admin.email == admin.email)
+    if admin_exists:
+        raise HTTPException(
+            status_code=409,
+            detail="Admin with email supplied already exists"
+        )
+
+    admin.password = hash_helper.encrypt(admin.password)
+    new_admin = await add_admin(admin)
+    return new_admin
